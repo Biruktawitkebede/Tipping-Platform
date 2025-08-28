@@ -17,6 +17,10 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->enum('role', ['tipper', 'creator', 'admin'])->default('tipper');
+            $table->string('avatar')->nullable();
+            $table->text('bio')->nullable();
+            $table->decimal('balance', 12, 2)->default(0.00);
             $table->rememberToken();
             $table->timestamps();
         });
