@@ -144,7 +144,7 @@ Authorization: Bearer <token>
 
 ---
 
-## 📧 Email Verification
+## 📧 Email Verification with MailTrap
 
 ### Verification Link
 
