@@ -1,4 +1,3 @@
-
 # Tipping API — Backend Documentation
 
 This is the backend for the **Tipping Platform**, built with **Laravel 11** and **Laravel Sanctum**.  
@@ -88,6 +87,8 @@ POST /register
 }
 ```
 
+✅ **Note:** A **verification email** is automatically sent via **Mailtrap**. See [Mailtrap Setup](#-mailtrap-setup).
+
 ---
 
 ### 2) Login
@@ -121,7 +122,7 @@ POST /login
 }
 ```
 
-⚠️ **Note:** If the user has not verified their email, login returns:
+⚠️ **If the email is not verified**, login is blocked:
 
 ```json
 { "message": "Please verify your email before logging in." }
@@ -148,22 +149,23 @@ Authorization: Bearer <token>
 
 ### Verification Link
 
-The backend emails a link like:
+The backend emails a verification link:
 
 ```
 GET /email/verify/{id}/{hash}
 ```
 
-* Clicking it verifies the user and returns JSON:
+#### Response
 
 ```json
 { "message": "Email verified successfully" }
 ```
 
-### Frontend Flow
+✅ **Development Flow:**
 
-* Show a “Verify your email” notice after registration.
-* The email contains a **button** that links to the frontend (optional) or directly to this endpoint.
+* The email is sent to your **Mailtrap inbox**.
+* Open Mailtrap → copy the verification link → paste in browser or hit with Postman.
+* Once verified, the user can log in.
 
 ---
 
@@ -187,13 +189,14 @@ POST /forgot-password
 { "message": "Password reset link sent to your email" }
 ```
 
-* The backend generates a **reset link** and sends it by email.
-* The link uses the **frontend URL** defined in `.env` (`FRONTEND_URL=http://localhost:3000`).
-* Example reset link in the email:
+✅ **Development Flow:**
 
-```
-http://localhost:3000/reset-password?token=XYZ123&email=ada@example.com
-```
+* The reset email will appear in your **Mailtrap inbox**.
+* The link is customized to point to your frontend:
+
+  ```
+  http://localhost:3000/reset-password?token=XYZ123&email=ada@example.com
+  ```
 
 ---
 
@@ -263,11 +266,12 @@ DB_DATABASE=tipping_api_db
 DB_USERNAME=root
 DB_PASSWORD=
 
+# Mailtrap config
 MAIL_MAILER=smtp
 MAIL_HOST=smtp.mailtrap.io
 MAIL_PORT=2525
-MAIL_USERNAME=your_username
-MAIL_PASSWORD=your_password
+MAIL_USERNAME=your_mailtrap_username
+MAIL_PASSWORD=your_mailtrap_password
 MAIL_ENCRYPTION=tls
 MAIL_FROM_ADDRESS="noreply@tippingapi.com"
 MAIL_FROM_NAME="Tipping API"
@@ -275,36 +279,47 @@ MAIL_FROM_NAME="Tipping API"
 
 ---
 
+## 📬 Mailtrap Setup
+
+The API is preconfigured to use **[Mailtrap](https://mailtrap.io/)** for all outgoing mail (verification and password reset).
+
+* Create a free Mailtrap account.
+* Copy the SMTP credentials into your `.env`.
+* All verification and reset emails will appear in the Mailtrap inbox, safe for testing.
+* In production, replace these with real SMTP credentials (SendGrid, Mailgun, Gmail, etc.).
+
+---
+
 ## 📑 Route Summary
 
-| Method | Path                        | Auth         | Purpose                                         |
-| ------ | --------------------------- | ------------ | ----------------------------------------------- |
-| GET    | `/health`                   | —            | Health check                                    |
-| POST   | `/register`                 | —            | Register new user (sends verification email)    |
-| POST   | `/login`                    | —            | Login and issue token (requires verified email) |
-| POST   | `/logout`                   | Bearer token | Revoke token                                    |
-| GET    | `/email/verify/{id}/{hash}` | Signed link  | Verify user email                               |
-| POST   | `/forgot-password`          | —            | Send password reset link                        |
-| POST   | `/reset-password`           | —            | Reset user password                             |
+| Method | Path                        | Auth         | Purpose                                              |
+| ------ | --------------------------- | ------------ | ---------------------------------------------------- |
+| GET    | `/health`                   | —            | Health check                                         |
+| POST   | `/register`                 | —            | Register new user + send Mailtrap verification email |
+| POST   | `/login`                    | —            | Login & issue token (requires verified email)        |
+| POST   | `/logout`                   | Bearer token | Revoke token                                         |
+| GET    | `/email/verify/{id}/{hash}` | Signed link  | Verify user email (link from Mailtrap)               |
+| POST   | `/forgot-password`          | —            | Send reset link (delivered via Mailtrap)             |
+| POST   | `/reset-password`           | —            | Reset user password                                  |
 
 ---
 
 ## 🛠️ Frontend Integration Notes
 
-* Store the `token` returned by **/login** or **/register**.
-* Send it in the `Authorization: Bearer` header for all protected requests.
-* Always send `Accept: application/json` to avoid Laravel HTML error pages.
+* Save the token returned by **/login** or **/register**.
+* Send it in the `Authorization: Bearer` header for protected requests.
+* Always include `Accept: application/json` in headers.
 * For password reset:
 
-  * `/forgot-password` sends the reset link.
-  * The **frontend form** should capture `token` and `email` from the link.
-  * The form should call `/reset-password` with the new password.
+  * `/forgot-password` sends a reset link to Mailtrap.
+  * The **frontend form** reads the token & email from the URL.
+  * The form then calls `/reset-password`.
 
 ---
 
 ## ✅ Example Postman Setup
 
-1. Create an environment in Postman:
+1. **Environment Variables**:
 
    ```json
    {
@@ -313,18 +328,17 @@ MAIL_FROM_NAME="Tipping API"
    }
    ```
 
-2. After login, save token to environment variable:
+2. **Save token after login**
+   In the **Tests tab** for `/login`:
 
-   * In Postman → **Tests tab** for `/login`:
+   ```js
+   let res = pm.response.json();
+   if (res.token) {
+     pm.environment.set("authToken", res.token);
+   }
+   ```
 
-     ```js
-     let res = pm.response.json();
-     if (res.token) {
-       pm.environment.set("authToken", res.token);
-     }
-     ```
-
-3. Use `{{authToken}}` in Authorization header for protected routes:
+3. **Use token** in protected requests:
 
    ```
    Authorization: Bearer {{authToken}}
@@ -333,11 +347,10 @@ MAIL_FROM_NAME="Tipping API"
 ---
 
 ## 📌 Summary
-It provides a complete **authentication module** for the Tipping Platform:
 
-* User registration
-* Email verification
-* Login/logout
-* Password reset (frontend-based reset flow)
-* Health check
+This backend provides a full **authentication system** for the Tipping Platform:
 
+* ✅ Registration (with Mailtrap email verification)
+* ✅ Login/Logout (Sanctum token-based)
+* ✅ Password Reset (Mailtrap email with frontend reset link)
+* ✅ Health check
