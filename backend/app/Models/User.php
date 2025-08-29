@@ -63,12 +63,28 @@ class User extends Authenticatable  implements MustVerifyEmailContract
 
     protected $appends = ['avatar_url'];
 
-    // Generate full avatar URL
     public function getAvatarUrlAttribute(): string
     {
-        if ($this->avatar) {
-            return asset('storage/' . $this->avatar);
+        if (!$this->avatar) {
+            return asset('images/avatar-placeholder.png');
         }
-        return asset('images/avatar-placeholder.png'); // fallback if no avatar uploaded
+
+        // If the stored value looks like a remote URL, return as-is
+        if (preg_match('#^(https?:)?//#i', $this->avatar)) {
+            return $this->avatar;
+        }
+
+        // Otherwise treat it as a local path in the public disk
+        return asset('storage/' . ltrim($this->avatar, '/'));
     }
+
+    /**
+     * Helper: is the current avatar a locally stored file?
+     */
+    public function avatarIsLocal(): bool
+    {
+        return $this->avatar
+            && !preg_match('#^(https?:)?//#i', $this->avatar); // not http/https or protocol-relative
+    }
+
 }
