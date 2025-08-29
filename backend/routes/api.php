@@ -13,6 +13,7 @@ use Illuminate\Auth\Events\PasswordReset;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Profile\ProfileController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
@@ -72,3 +73,8 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) 
 
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink']);
 Route::post('/reset-password', [ResetPasswordController::class, 'reset']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user', [ProfileController::class, 'show']);
+    Route::put('/user', [ProfileController::class, 'update']);
+});

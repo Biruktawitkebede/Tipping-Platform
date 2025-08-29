@@ -50,7 +50,7 @@ class User extends Authenticatable  implements MustVerifyEmailContract
     {
         return [
             'email_verified_at' => 'datetime',
-            //'password' => 'hashed',
+            //'password' => 'hashed', 
         ];
     }
 
@@ -59,5 +59,16 @@ class User extends Authenticatable  implements MustVerifyEmailContract
         $url = config('app.frontend_url') . '/reset-password?token=' . $token . '&email=' . $this->email;
 
         $this->notify(new ResetPasswordNotification($url));
+    }
+
+    protected $appends = ['avatar_url'];
+
+    // Generate full avatar URL
+    public function getAvatarUrlAttribute(): string
+    {
+        if ($this->avatar) {
+            return asset('storage/' . $this->avatar);
+        }
+        return asset('images/avatar-placeholder.png'); // fallback if no avatar uploaded
     }
 }
