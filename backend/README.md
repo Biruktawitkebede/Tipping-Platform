@@ -5,7 +5,7 @@ It provides authentication, email verification, password reset, and tipping-rela
 
 ---
 
-## 🔗 Base URL
+##  Base URL
 
 ```
 
@@ -17,7 +17,7 @@ All endpoints are prefixed with `/api`.
 
 ---
 
-## ⚙️ Authentication
+##  Authentication
 
 - **Auth type:** Bearer token (Sanctum personal access tokens)  
 - **Header:**  
@@ -31,7 +31,7 @@ Content-Type: application/json
 
 ---
 
-## 🩺 Health Check
+##  Health Check
 
 ### Endpoint
 ```
@@ -50,7 +50,7 @@ GET /health
 
 ---
 
-## 👤 Authentication Endpoints
+##  Authentication Endpoints
 
 ### 1) Register User
 
@@ -87,7 +87,7 @@ POST /register
 }
 ```
 
-✅ **Note:** A **verification email** is automatically sent via **Mailtrap**. See [Mailtrap Setup](#-mailtrap-setup).
+ **Note:** A **verification email** is automatically sent via **Mailtrap**. See [Mailtrap Setup](#-mailtrap-setup).
 
 ---
 
@@ -122,7 +122,7 @@ POST /login
 }
 ```
 
-⚠️ **If the email is not verified**, login is blocked:
+ **If the email is not verified**, login is blocked:
 
 ```json
 { "message": "Please verify your email before logging in." }
@@ -145,7 +145,7 @@ Authorization: Bearer <token>
 
 ---
 
-## 📧 Email Verification with MailTrap
+##  Email Verification with MailTrap
 
 ### Verification Link
 
@@ -161,7 +161,7 @@ GET /email/verify/{id}/{hash}
 { "message": "Email verified successfully" }
 ```
 
-✅ **Development Flow:**
+ **Development Flow:**
 
 * The email is sent to your **Mailtrap inbox**.
 * Open Mailtrap → copy the verification link → paste in browser or hit with Postman.
@@ -169,7 +169,7 @@ GET /email/verify/{id}/{hash}
 
 ---
 
-## 🔑 Password Reset Flow
+##  Password Reset Flow
 
 ### 1) Request Password Reset
 
@@ -189,7 +189,7 @@ POST /forgot-password
 { "message": "Password reset link sent to your email" }
 ```
 
-✅ **Development Flow:**
+ **Development Flow:**
 
 * The reset email will appear in your **Mailtrap inbox**.
 * The link is customized to point to your frontend:
@@ -225,7 +225,7 @@ POST /reset-password
 
 ---
 
-## 🔒 Error Responses
+##  Error Responses
 
 ### 401 Unauthorized
 
@@ -252,7 +252,7 @@ POST /reset-password
 
 ---
 
-## 🌍 Environment Variables (Backend)
+##  Environment Variables (Backend)
 
 ```env
 APP_NAME="Tipping API"
@@ -279,7 +279,7 @@ MAIL_FROM_NAME="Tipping API"
 
 ---
 
-## 📬 Mailtrap Setup
+##  Mailtrap Setup
 
 The API is preconfigured to use **[Mailtrap](https://mailtrap.io/)** for all outgoing mail (verification and password reset).
 
@@ -290,7 +290,7 @@ The API is preconfigured to use **[Mailtrap](https://mailtrap.io/)** for all out
 
 ---
 
-## 📑 Route Summary
+##  Route Summary
 
 | Method | Path                        | Auth         | Purpose                                              |
 | ------ | --------------------------- | ------------ | ---------------------------------------------------- |
@@ -304,7 +304,7 @@ The API is preconfigured to use **[Mailtrap](https://mailtrap.io/)** for all out
 
 ---
 
-## 🛠️ Frontend Integration Notes
+##   Notes
 
 * Save the token returned by **/login** or **/register**.
 * Send it in the `Authorization: Bearer` header for protected requests.
@@ -317,7 +317,7 @@ The API is preconfigured to use **[Mailtrap](https://mailtrap.io/)** for all out
 
 ---
 
-## ✅ Example Postman Setup
+##  Example Postman Setup
 
 1. **Environment Variables**:
 
