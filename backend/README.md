@@ -346,11 +346,172 @@ The API is preconfigured to use **[Mailtrap](https://mailtrap.io/)** for all out
 
 ---
 
-## 📌 Summary
 
-This backend provides a full **authentication system** for the Tipping Platform:
+##  User Profile Management 
 
-* ✅ Registration (with Mailtrap email verification)
-* ✅ Login/Logout (Sanctum token-based)
-* ✅ Password Reset (Mailtrap email with frontend reset link)
-* ✅ Health check
+This module enables authenticated users to **view and update their profile**, including uploading an avatar(file or url).
+All routes are **protected with Sanctum** and require a valid Bearer token.
+
+---
+
+##  Database Schema (Users Table – Relevant Fields)
+
+| Column      | Type              | Description                                  |
+| ----------- | ----------------- | -------------------------------------------- |
+| id          | bigint (PK)       | Unique user ID                               |
+| name        | string            | User’s full name                             |
+| email       | string (unique)   | User’s email address                         |
+| role        | enum              | One of: `tipper`, `creator`, `admin`         |
+| bio         | text (nullable)   | Short biography                              |
+| avatar      | string (nullable) | File path to avatar (e.g. `avatars/xyz.png`) |
+| balance     | decimal(12,2)     | Current account balance (for tipping system) |
+| created\_at | timestamp         | User creation date                           |
+| updated\_at | timestamp         | Last profile update                          |
+
+⚡  Always use `avatar_url` from API response (never build it manually).
+
+---
+
+##  Endpoints
+
+###  Get Current User Profile
+
+**Request:**
+
+```
+GET /api/user
+```
+
+**Headers:**
+
+```http
+Authorization: Bearer {token}
+Accept: application/json
+```
+
+**Response Example:**
+
+```json
+{
+  "data": {
+    "id": 7,
+    "name": "Anteneh",
+    "email": "anteneh8@gmail.com",
+    "role": "tipper",
+    "bio": "I am a new user",
+    "avatar": "avatars/avatar123.png",
+    "avatar_url": "http://127.0.0.1:8000/storage/avatars/avatar123.png",
+    "balance": "0.00",
+    "created_at": "2025-08-28T17:13:21.000000Z",
+    "updated_at": "2025-08-28T17:32:28.000000Z"
+  }
+}
+```
+
+---
+
+###  Update Profile
+
+**Request:**
+
+```
+PUT /api/user
+```
+
+**Headers:**
+
+```http
+Authorization: Bearer {token}
+Accept: application/json
+Content-Type: multipart/form-data
+```
+
+**Body (form-data):**
+
+| Field  | Type   | Required | Description                                |
+| ------ | ------ | -------- | ------------------------------------------ |
+| name   | string | optional | Update the user’s name                     |
+| bio    | string | optional | Biography (max 1000 chars)                 |
+| email  | string | optional | Must be valid and unique                   |
+| avatar | file   | optional | Image file (jpg, jpeg, png, webp), max 2MB |
+
+**Example (form-data):**
+
+* `name: Jane Smith`
+* `bio: I love Laravel`
+* `avatar: [choose file]`
+
+**cURL Example:**
+
+```bash
+curl -X PUT http://127.0.0.1:8000/api/user \
+  -H "Authorization: Bearer {token}" \
+  -H "Accept: application/json" \
+  -F "name=Jane Smith" \
+  -F "bio=I love Laravel" \
+  -F "avatar=@/path/to/avatar.png"
+```
+
+**Response Example:**
+
+```json
+{
+  "message": "Profile updated successfully.",
+  "data": {
+    "id": 7,
+    "name": "Jane Smith",
+    "email": "anteneh8@gmail.com",
+    "role": "tipper",
+    "bio": "I love Laravel",
+    "avatar": "avatars/new_avatar.png",
+    "avatar_url": "http://127.0.0.1:8000/storage/avatars/new_avatar.png",
+    "balance": "0.00",
+    "created_at": "2025-08-28T17:13:21.000000Z",
+    "updated_at": "2025-08-29T11:00:00.000000Z"
+  }
+}
+```
+
+---
+
+##  Validation Rules
+
+* `name`: max 100 characters
+* `bio`: max 1000 characters
+* `email`: must be valid + unique
+* `avatar`: must be an image (`jpg,jpeg,png,webp`) and max 2MB
+
+---
+
+##  Error Responses
+
+* **Unauthenticated (no/invalid token):**
+
+```json
+{
+  "message": "Unauthenticated."
+}
+```
+
+* **Validation Error:**
+
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "email": [
+      "The email has already been taken."
+    ]
+  }
+}
+```
+
+---
+
+##  Notes
+
+* Always send `Authorization: Bearer {token}` with requests.
+* For avatar upload, use **`multipart/form-data`**, not JSON.
+* Display avatars using `avatar_url` from API (handles both missing and uploaded avatars).
+* `balance` is included for later tipping features but should be **read-only** for users.
+
