@@ -513,5 +513,5 @@ curl -X PUT http://127.0.0.1:8000/api/user \
 * Always send `Authorization: Bearer {token}` with requests.
 * For avatar upload, use **`multipart/form-data`**, not JSON.
 * Display avatars using `avatar_url` from API (handles both missing and uploaded avatars).
-* `balance` is included for later tipping features but should be **read-only** for users.
+## `balance` is included for later tipping features but should be **read-only** for users.
 
