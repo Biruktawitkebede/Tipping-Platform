@@ -515,3 +515,179 @@ curl -X PUT http://127.0.0.1:8000/api/user \
 * Display avatars using `avatar_url` from API (handles both missing and uploaded avatars).
 ## `balance` is included for later tipping features but should be **read-only** for users.
 
+
+
+
+# Chapa Payment Integration
+
+This backend module integrates the **Chapa payment gateway** to handle tipping creators. It includes payment initialization, webhook handling, tip status tracking, and automatic creator balance updates.
+
+---
+
+## Features
+
+* Initialize tip payments via Chapa checkout.
+* Receive and verify webhook notifications from Chapa.
+* Update tip status (`pending`, `succeeded`, `failed`).
+* Automatically update creator balances after successful payments.
+* Secure HMAC-SHA256 verification for webhook requests.
+* Frontend-friendly endpoints to track tip status.
+
+---
+
+## Environment Variables
+
+Add the following to your `.env` file:
+
+```env
+# Chapa API Keys
+CHAPA_PUBLIC_KEY=CHAPUBK_TEST-xxxx
+CHAPA_SECRET_KEY=CHASECK_TEST-xxxx
+
+# Webhook Secret
+CHAPA_WEBHOOK_SECRET=YourSecretHere
+
+# Webhook and return URLs
+CHAPA_WEBHOOK_URL=https://<your-domain-or-ngrok>/api/chapa/webhook
+CHAPA_RETURN_URL=https://<your-domain-or-ngrok>/payment-result
+```
+
+**Notes:**
+
+* Use **ngrok** URLs for local development.
+* `CHAPA_WEBHOOK_SECRET` must match the secret in your Chapa dashboard.
+* Switch to production API keys in live deployments.
+
+---
+
+## API Endpoints
+
+### 1. Create Tip & Initialize Payment
+
+```
+POST /api/creator/{id}/tips
+```
+
+**Request Body:**
+
+```json
+{
+  "amount": 50,
+  "message": "Great content!",
+  "anonymous": false
+}
+```
+
+**Response:**
+
+```json
+{
+  "message": "Checkout initialized",
+  "checkout_url": "https://checkout.chapa.co/checkout/payment/<id>",
+  "tx_ref": "tip_XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+  "tip_id": 17
+}
+```
+
+* `checkout_url` → redirect user to Chapa for payment.
+* `tx_ref` → track tip status.
+
+---
+
+### 2. Check Tip Status
+
+```
+GET /api/tips/{tx_ref}/status
+```
+
+**Response:**
+
+```json
+{
+  "tx_ref": "tip_XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+  "status": "pending|succeeded|failed",
+  "amount": "50.00",
+  "message": "Great content!"
+}
+```
+
+* Frontend can poll this endpoint to update UI after payment.
+
+---
+
+### 3. Webhook Endpoint
+
+```
+POST /api/chapa/webhook
+```
+
+* Chapa sends POST requests after payments.
+* Server verifies signature using `CHAPA_WEBHOOK_SECRET`.
+* Updates tip status and creator balance upon successful payment.
+
+**Important:**
+
+* Only POST requests are allowed; GET requests return `405 Method Not Allowed`.
+* Verify webhook payload contains `tx_ref`.
+* Webhook endpoint should not be called manually by frontend.
+
+---
+
+### 4. Payment Result Page
+
+```
+GET /payment-result
+```
+
+**Response:**
+
+```json
+{
+  "message": "Payment completed. Check tip status via /api/tips/{tx_ref}/status."
+}
+```
+
+* Optional confirmation page for users after payment.
+
+---
+
+## Workflow
+
+1. User initiates tip → POST `/api/creator/{id}/tips`.
+2. Server returns `checkout_url` → frontend redirects to Chapa.
+3. Payment completes → Chapa sends webhook POST `/api/chapa/webhook`.
+4. Server verifies webhook → updates tip status → updates creator balance.
+5. Frontend polls `/api/tips/{tx_ref}/status` → shows payment result.
+
+---
+
+## Notes
+
+* **Sandbox Mode:** Use test keys for development; live keys for production.
+* **Logs:** Check `storage/logs/laravel.log` for webhook and payment info.
+* **Ngrok:** Use ngrok for local webhook testing. Ensure the URL matches `CHAPA_WEBHOOK_URL`.
+* **Error Handling:**
+
+  * `400 Bad Request` → usually missing `tx_ref` in webhook payload.
+  * `405 Method Not Allowed` → GET request sent to webhook endpoint.
+  * Signature mismatch → verify `CHAPA_WEBHOOK_SECRET`.
+
+---
+
+## Dependencies
+
+* Laravel 10+
+* PHP 8.2+
+* Chapa payment gateway (test or live)
+* HTTP Client (Laravel `Http` facade)
+
+---
+
+## Database
+
+* `tips` table stores all tip transactions.
+* `users` table stores creator balances.
+* Tip status updates are transactional to avoid race conditions.
+
+
+
