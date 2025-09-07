@@ -8,10 +8,13 @@ use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TipController;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Auth\Events\PasswordReset;
+use App\Http\Controllers\CreatorController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\ChapaWebhookController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Profile\ProfileController;
 use App\Http\Controllers\Auth\ResetPasswordController;
@@ -61,7 +64,7 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) 
         return response()->json(['message' => 'Email verified successfully']);
     })->middleware(['signed'])->name('verification.verify');
 
-    Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
 
     // Resend verification email
     Route::post('/email/verification-notification', function (Request $request) {
@@ -78,3 +81,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [ProfileController::class, 'show']);
     Route::put('/user', [ProfileController::class, 'update']);
 });
+
+
+Route::get('/creator/{id}', [CreatorController::class, 'show']); // public creator profile
+Route::get('/tips/{tx_ref}/status', [TipController::class, 'status']); // polling status
+Route::post('/chapa/webhook', [ChapaWebhookController::class, 'handle']); // Chapa webhook (public)
+Route::middleware('auth:sanctum')->post('/creator/{id}/tips', [TipController::class, 'store']);// create tip + init checkout
+Route::get('/payment-result', function () {
+    return response()->json([
+        'message' => 'Payment completed.'
+    ]);
+});
+
