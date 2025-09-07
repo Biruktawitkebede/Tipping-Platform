@@ -672,14 +672,6 @@ GET /payment-result
   * `405 Method Not Allowed` → GET request sent to webhook endpoint.
   * Signature mismatch → verify `CHAPA_WEBHOOK_SECRET`.
 
----
-
-## Dependencies
-
-* Laravel 10+
-* PHP 8.2+
-* Chapa payment gateway (test or live)
-* HTTP Client (Laravel `Http` facade)
 
 ---
 
