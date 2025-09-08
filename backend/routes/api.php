@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TipController;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Auth\Events\PasswordReset;
+use App\Http\Controllers\PayoutController;
 use App\Http\Controllers\CreatorController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
@@ -83,7 +84,6 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 
-Route::get('/creator/{id}', [CreatorController::class, 'show']); // public creator profile
 Route::get('/tips/{tx_ref}/status', [TipController::class, 'status']); // polling status
 Route::post('/chapa/webhook', [ChapaWebhookController::class, 'handle']); // Chapa webhook (public)
 Route::middleware('auth:sanctum')->post('/creator/{id}/tips', [TipController::class, 'store']);// create tip + init checkout
@@ -92,4 +92,20 @@ Route::get('/payment-result', function () {
         'message' => 'Payment completed.'
     ]);
 });
+
+// Creator routes
+Route::middleware(['auth:sanctum', 'role:creator'])->group(function () {
+    Route::post('/payouts', [PayoutController::class, 'store']);
+    Route::get('/creator/analytics', [CreatorController::class, 'analytics']);
+});
+Route::get('/creator/{id}', [CreatorController::class, 'show']); // public creator profile
+
+// Admin routes
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::get('/payouts', [PayoutController::class, 'index']);
+    Route::put('/payouts/{id}/approve', [PayoutController::class, 'approve']);
+    Route::put('/payouts/{id}/reject', [PayoutController::class, 'reject']);
+    Route::put('/payouts/{id}/mark-paid', [PayoutController::class, 'markPaid']);
+});
+
 
