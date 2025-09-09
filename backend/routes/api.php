@@ -91,7 +91,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tips/received', [TransactionController::class, 'receivedTips']); */
 });
 
-});
 
 
 Route::get('/tips/{tx_ref}/status', [TipController::class, 'status']); // polling status
