@@ -87,4 +87,50 @@ class User extends Authenticatable  implements MustVerifyEmailContract
             && !preg_match('#^(https?:)?//#i', $this->avatar); // not http/https or protocol-relative
     }
 
+    public function sentTransactions()
+    {
+        return $this->hasMany(Transaction::class, 'sender_id');
+    }
+
+    public function receivedTransactions()
+    {
+        return $this->hasMany(Transaction::class, 'receiver_id');
+    }
+
+    public function allTransactions()
+    {
+        return Transaction::forUser($this->id);
+    }
+
+    public function canSendTip($amount): bool
+    {
+        return $this->balance >= $amount;
+    }
+
+    public function isCreator(): bool
+    {
+        return $this->role === 'creator';
+    }
+
+    public function getTotalTipsSent(): float
+    {
+        return $this->sentTransactions()
+            ->tips()
+            ->completed()
+            ->sum('amount');
+    }
+
+    public function getTotalTipsReceived(): float
+    {
+        return $this->receivedTransactions()
+            ->tips()
+            ->completed()
+            ->sum('net_amount');
+    }
+
+    public function getFormattedBalanceAttribute(): string
+    {
+        return number_format($this->balance, 2) . ' ETB';
+    }
+
 }
