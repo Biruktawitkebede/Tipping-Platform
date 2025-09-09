@@ -683,3 +683,207 @@ GET /payment-result
 
 
 
+#  Payouts, Analytics & Role Management
+
+This module introduces **payout handling for creators**, **analytics insights**, and **role-based access control (RBAC)** to separate **admins** from **creators**.
+
+It also defines how **admins register** and explains the APIs available for both frontend and backend integration.
+
+---
+
+##  Overview
+
+* **Creators** earn money through tips and can request payouts.
+* **Admins** manage payout approvals, rejections, and payment confirmations.
+* **Analytics** provides creators with insights into their tips and earnings.
+* **Role management** ensures only authorized users can access specific features.
+
+---
+
+##  Authentication
+
+* All endpoints require **Bearer Token authentication**.
+* Token is issued upon login and must be sent in the `Authorization` header:
+
+```
+Authorization: Bearer <token>
+```
+
+---
+
+##  Role Management
+
+Every user has a `role` field:
+
+* **creator** → Can request payouts, view analytics.
+* **admin** → Can view/manage payouts.
+
+Role enforcement is handled automatically by the backend.
+
+---
+
+##  Admin Registration
+
+Admins are created manually for security.
+
+* Only backend can create admins directly (via database or console command).
+* Once created, an admin logs in just like a normal user but gains access to **admin APIs**.
+
+---
+
+##  API Endpoints
+
+###  Creator Endpoints
+
+| Method | Endpoint                 | Description                                      |
+| ------ | ------------------------ | ------------------------------------------------ |
+| `POST` | `/api/payouts`           | Request a payout (balance deducted immediately). |
+| `GET`  | `/api/creator/analytics` | Fetch analytics about tips and balance.          |
+
+**Example — Request Payout**
+
+Request:
+
+```json
+POST /api/payouts
+{
+  "amount": 50,
+  "note": "Weekly withdrawal"
+}
+```
+
+Response:
+
+```json
+{
+  "message": "Payout requested",
+  "payout": {
+    "id": 1,
+    "amount": "50.00",
+    "status": "pending",
+    "reference": "payout_xxxx",
+    "note": "Weekly withdrawal"
+  }
+}
+```
+
+**Example — Creator Analytics**
+
+```json
+GET /api/creator/analytics
+```
+
+Response:
+
+```json
+{
+  "total_tips": 25,
+  "total_amount": "350.00",
+  "last_tip": "2025-09-05 14:20:00",
+  "top_tipper": "Jane Doe",
+  "balance": "120.00"
+}
+```
+
+---
+
+###  Admin Endpoints
+
+| Method | Endpoint                      | Description                                   |
+| ------ | ----------------------------- | --------------------------------------------- |
+| `GET`  | `/api/payouts`                | View all payout requests.                     |
+| `PUT`  | `/api/payouts/{id}/approve`   | Approve a payout (moves status → `approved`). |
+| `PUT`  | `/api/payouts/{id}/reject`    | Reject payout & refund creator balance.       |
+| `PUT`  | `/api/payouts/{id}/mark-paid` | Mark an approved payout as paid.              |
+
+**Example — Approve Payout**
+
+```json
+PUT /api/payouts/1/approve
+```
+
+Response:
+
+```json
+{
+  "message": "Payout approved",
+  "payout": {
+    "id": 1,
+    "status": "approved",
+    "processed_at": "2025-09-09 12:44:00"
+  }
+}
+```
+
+**Example — Reject Payout**
+
+```json
+PUT /api/payouts/1/reject
+{
+  "reason": "Invalid bank details"
+}
+```
+
+Response:
+
+```json
+{
+  "message": "Payout rejected + refunded",
+  "payout": {
+    "id": 1,
+    "status": "rejected",
+    "note": "Invalid bank details"
+  }
+}
+```
+
+---
+
+##  Data Flow
+
+1. **Creator workflow**
+
+   * Earns balance through tips.
+   * Requests a payout.
+   * Balance is deducted immediately.
+   * Status starts as `pending`.
+
+2. **Admin workflow**
+
+   * Reviews payout requests.
+   * Can either:
+
+     * Approve (status → `approved`)
+     * Reject (status → `rejected`, funds refunded)
+     * Mark as Paid (status → `paid`, after manual transfer)
+
+3. **Analytics workflow**
+
+   * Creator fetches analytics at `/api/creator/analytics`.
+   * Returns tips count, earnings, last tip date, top supporter, and current balance.
+
+---
+
+##  Frontend Integration Guide
+
+* Always attach `Authorization: Bearer <token>` header.
+* **Creators** only see `/api/creator/analytics` and `/api/payouts (POST)`.
+* **Admins** only see `/api/payouts (GET/PUT)` endpoints.
+* Use returned statuses (`pending`, `approved`, `rejected`, `paid`) to style UI badges.
+* For analytics, frontend can render:
+
+  * Total earned amount → Earnings chart.
+  * Last tip → "Recent activity" card.
+  * Top tipper → Highlight top supporter.
+
+---
+
+## note
+
+* **Creators** → Request payouts, view analytics.
+* **Admins** → Manage payouts (approve, reject, mark paid).
+* **RBAC** → Securely restricts access by role.
+* **Admin accounts** are created manually, not via public registration.
+
+
+
