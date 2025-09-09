@@ -1,16 +1,48 @@
 # Tipping API — Backend Documentation
 
-This is the backend for the **Tipping Platform**, built with **Laravel 11** and **Laravel Sanctum**.  
-It provides authentication, email verification, password reset, and tipping-related user management endpoints.
+This is the backend for the **Tipping Platform**, built with **Laravel 11** and **Laravel Sanctum**.
+It provides authentication, email verification, password reset, tipping, payments, payouts, and role-based access endpoints.
+
+---
+
+##  Table of Contents
+
+1. [Base URL](#-base-url)
+2. [Authentication](#-authentication)
+3. [Health Check](#-health-check)
+4. [Authentication Endpoints](#-authentication-endpoints)
+
+   * [Register User](#1-register-user)
+   * [Login](#2-login)
+   * [Logout](#3-logout)
+5. [Email Verification with Mailtrap](#-email-verification-with-mailtrap)
+6. [Password Reset Flow](#-password-reset-flow)
+7. [Error Responses](#-error-responses)
+8. [Environment Variables](#-environment-variables-backend)
+9. [Mailtrap Setup](#-mailtrap-setup)
+10. [Route Summary](#-route-summary)
+11. [Notes](#-notes)
+12. [Example Postman Setup](#-example-postman-setup)
+13. [User Profile Management](#-user-profile-management)
+14. [Chapa Payment Integration](#-chapa-payment-integration)
+15. [Payouts, Analytics & Role Management](#-payouts-analytics--role-management)
+
+* [Overview](#-overview)
+* [Role Management](#-role-management)
+* [Admin Registration](#-admin-registration)
+* [Creator Endpoints](#-creator-endpoints)
+* [Admin Endpoints](#-admin-endpoints)
+* [Data Flow](#-data-flow)
+* [Frontend Integration Guide](#-frontend-integration-guide)
+
+16. [Final Notes](#note)
 
 ---
 
 ##  Base URL
 
-```
-
-[http://127.0.0.1:8000/api](http://127.0.0.1:8000/api)
-
+```http
+http://127.0.0.1:8000/api
 ```
 
 All endpoints are prefixed with `/api`.
@@ -19,14 +51,13 @@ All endpoints are prefixed with `/api`.
 
 ##  Authentication
 
-- **Auth type:** Bearer token (Sanctum personal access tokens)  
-- **Header:**  
-```
+* **Auth type:** Bearer token (Sanctum personal access tokens)
+* **Headers:**
 
+```http
 Authorization: Bearer <token>
 Accept: application/json
 Content-Type: application/json
-
 ```
 
 ---
@@ -34,19 +65,19 @@ Content-Type: application/json
 ##  Health Check
 
 ### Endpoint
+
+```
+GET /health
 ```
 
-GET /health
-
-````
-
 ### Response (200)
+
 ```json
 {
   "status": "ok",
   "database": "connected"
 }
-````
+```
 
 ---
 
@@ -87,7 +118,7 @@ POST /register
 }
 ```
 
- **Note:** A **verification email** is automatically sent via **Mailtrap**. See [Mailtrap Setup](#-mailtrap-setup).
+**Note:** A verification email is automatically sent via **Mailtrap**. See [Mailtrap Setup](#-mailtrap-setup).
 
 ---
 
@@ -122,7 +153,7 @@ POST /login
 }
 ```
 
- **If the email is not verified**, login is blocked:
+If the email is not verified, login is blocked:
 
 ```json
 { "message": "Please verify your email before logging in." }
@@ -145,11 +176,9 @@ Authorization: Bearer <token>
 
 ---
 
-##  Email Verification with MailTrap
+##  Email Verification with Mailtrap
 
 ### Verification Link
-
-The backend emails a verification link:
 
 ```
 GET /email/verify/{id}/{hash}
@@ -161,7 +190,7 @@ GET /email/verify/{id}/{hash}
 { "message": "Email verified successfully" }
 ```
 
- **Development Flow:**
+**Development Flow:**
 
 * The email is sent to your **Mailtrap inbox**.
 * Open Mailtrap → copy the verification link → paste in browser or hit with Postman.
@@ -189,14 +218,14 @@ POST /forgot-password
 { "message": "Password reset link sent to your email" }
 ```
 
- **Development Flow:**
+**Development Flow:**
 
 * The reset email will appear in your **Mailtrap inbox**.
 * The link is customized to point to your frontend:
 
-  ```
-  http://localhost:3000/reset-password?token=XYZ123&email=ada@example.com
-  ```
+```
+http://localhost:3000/reset-password?token=XYZ123&email=ada@example.com
+```
 
 ---
 
@@ -281,12 +310,12 @@ MAIL_FROM_NAME="Tipping API"
 
 ##  Mailtrap Setup
 
-The API is preconfigured to use **[Mailtrap](https://mailtrap.io/)** for all outgoing mail (verification and password reset).
+The API is preconfigured to use **[Mailtrap](https://mailtrap.io/)** for all outgoing mail.
 
 * Create a free Mailtrap account.
 * Copy the SMTP credentials into your `.env`.
-* All verification and reset emails will appear in the Mailtrap inbox, safe for testing.
-* In production, replace these with real SMTP credentials (SendGrid, Mailgun, Gmail, etc.).
+* All verification and reset emails will appear in Mailtrap.
+* In production, replace with real SMTP credentials (SendGrid, Mailgun, Gmail, etc.).
 
 ---
 
@@ -298,98 +327,91 @@ The API is preconfigured to use **[Mailtrap](https://mailtrap.io/)** for all out
 | POST   | `/register`                 | —            | Register new user + send Mailtrap verification email |
 | POST   | `/login`                    | —            | Login & issue token (requires verified email)        |
 | POST   | `/logout`                   | Bearer token | Revoke token                                         |
-| GET    | `/email/verify/{id}/{hash}` | Signed link  | Verify user email (link from Mailtrap)               |
+| GET    | `/email/verify/{id}/{hash}` | Signed link  | Verify user email                                    |
 | POST   | `/forgot-password`          | —            | Send reset link (delivered via Mailtrap)             |
 | POST   | `/reset-password`           | —            | Reset user password                                  |
 
 ---
 
-##   Notes
+##  Notes
 
-* Save the token returned by **/login** or **/register**.
+* Save the token returned by `/login` or `/register`.
 * Send it in the `Authorization: Bearer` header for protected requests.
 * Always include `Accept: application/json` in headers.
 * For password reset:
 
-  * `/forgot-password` sends a reset link to Mailtrap.
-  * The **frontend form** reads the token & email from the URL.
-  * The form then calls `/reset-password`.
+  * `/forgot-password` sends reset link via Mailtrap.
+  * Frontend extracts token & email from URL.
+  * Calls `/reset-password` with new password.
 
 ---
 
 ##  Example Postman Setup
 
-1. **Environment Variables**:
+1. **Environment Variables**
 
-   ```json
-   {
-     "baseUrl": "http://127.0.0.1:8000/api",
-     "authToken": ""
-   }
-   ```
+```json
+{
+  "baseUrl": "http://127.0.0.1:8000/api",
+  "authToken": ""
+}
+```
 
 2. **Save token after login**
    In the **Tests tab** for `/login`:
 
-   ```js
-   let res = pm.response.json();
-   if (res.token) {
-     pm.environment.set("authToken", res.token);
-   }
-   ```
+```js
+let res = pm.response.json();
+if (res.token) {
+  pm.environment.set("authToken", res.token);
+}
+```
 
-3. **Use token** in protected requests:
+3. **Use token in requests**
 
-   ```
-   Authorization: Bearer {{authToken}}
-   ```
-
----
-
-
-##  User Profile Management 
-
-This module enables authenticated users to **view and update their profile**, including uploading an avatar(file or url).
-All routes are **protected with Sanctum** and require a valid Bearer token.
+```http
+Authorization: Bearer {{authToken}}
+```
 
 ---
 
-##  Database Schema (Users Table – Relevant Fields)
+##  User Profile Management
 
-| Column      | Type              | Description                                  |
-| ----------- | ----------------- | -------------------------------------------- |
-| id          | bigint (PK)       | Unique user ID                               |
-| name        | string            | User’s full name                             |
-| email       | string (unique)   | User’s email address                         |
-| role        | enum              | One of: `tipper`, `creator`, `admin`         |
-| bio         | text (nullable)   | Short biography                              |
-| avatar      | string (nullable) | File path to avatar (e.g. `avatars/xyz.png`) |
-| balance     | decimal(12,2)     | Current account balance (for tipping system) |
-| created\_at | timestamp         | User creation date                           |
-| updated\_at | timestamp         | Last profile update                          |
+This module enables authenticated users to **view and update their profile**, including uploading an avatar.
+All routes require a valid **Bearer token**.
 
-⚡  Always use `avatar_url` from API response (never build it manually).
+### Database Schema (Users Table – Relevant Fields)
+
+| Column      | Type              | Description                          |
+| ----------- | ----------------- | ------------------------------------ |
+| id          | bigint (PK)       | Unique user ID                       |
+| name        | string            | Full name                            |
+| email       | string (unique)   | Email address                        |
+| role        | enum              | One of: `tipper`, `creator`, `admin` |
+| bio         | text (nullable)   | Short biography                      |
+| avatar      | string (nullable) | Avatar path (e.g. `avatars/xyz.png`) |
+| balance     | decimal(12,2)     | Account balance (for tipping system) |
+| created\_at | timestamp         | User creation date                   |
+| updated\_at | timestamp         | Last profile update                  |
+
+⚡ Always use `avatar_url` from API responses (never build manually).
 
 ---
 
-##  Endpoints
-
-###  Get Current User Profile
-
-**Request:**
+### Get Current User Profile
 
 ```
 GET /api/user
 ```
 
-**Headers:**
+Headers:
 
 ```http
 Authorization: Bearer {token}
 Accept: application/json
 ```
 
-**Response Example:**
+Response Example:
 
 ```json
 {
@@ -410,15 +432,13 @@ Accept: application/json
 
 ---
 
-###  Update Profile
-
-**Request:**
+### Update Profile
 
 ```
 PUT /api/user
 ```
 
-**Headers:**
+Headers:
 
 ```http
 Authorization: Bearer {token}
@@ -426,33 +446,14 @@ Accept: application/json
 Content-Type: multipart/form-data
 ```
 
-**Body (form-data):**
+Body (form-data):
 
-| Field  | Type   | Required | Description                                |
-| ------ | ------ | -------- | ------------------------------------------ |
-| name   | string | optional | Update the user’s name                     |
-| bio    | string | optional | Biography (max 1000 chars)                 |
-| email  | string | optional | Must be valid and unique                   |
-| avatar | file   | optional | Image file (jpg, jpeg, png, webp), max 2MB |
+* `name` (string, optional)
+* `bio` (string, optional)
+* `email` (string, optional, unique)
+* `avatar` (file, optional, max 2MB)
 
-**Example (form-data):**
-
-* `name: Jane Smith`
-* `bio: I love Laravel`
-* `avatar: [choose file]`
-
-**cURL Example:**
-
-```bash
-curl -X PUT http://127.0.0.1:8000/api/user \
-  -H "Authorization: Bearer {token}" \
-  -H "Accept: application/json" \
-  -F "name=Jane Smith" \
-  -F "bio=I love Laravel" \
-  -F "avatar=@/path/to/avatar.png"
-```
-
-**Response Example:**
+Response Example:
 
 ```json
 {
@@ -474,283 +475,52 @@ curl -X PUT http://127.0.0.1:8000/api/user \
 
 ---
 
-##  Validation Rules
+##  Chapa Payment Integration
 
-* `name`: max 100 characters
-* `bio`: max 1000 characters
-* `email`: must be valid + unique
-* `avatar`: must be an image (`jpg,jpeg,png,webp`) and max 2MB
+This module integrates the **Chapa payment gateway** for tipping creators.
+Features include: payment initialization, webhook handling, tip tracking, and balance updates.
 
----
-
-##  Error Responses
-
-* **Unauthenticated (no/invalid token):**
-
-```json
-{
-  "message": "Unauthenticated."
-}
-```
-
-* **Validation Error:**
-
-```json
-{
-  "message": "The given data was invalid.",
-  "errors": {
-    "email": [
-      "The email has already been taken."
-    ]
-  }
-}
-```
-
----
-
-##  Notes
-
-* Always send `Authorization: Bearer {token}` with requests.
-* For avatar upload, use **`multipart/form-data`**, not JSON.
-* Display avatars using `avatar_url` from API (handles both missing and uploaded avatars).
-## `balance` is included for later tipping features but should be **read-only** for users.
-
-
-
-
-# Chapa Payment Integration
-
-This backend module integrates the **Chapa payment gateway** to handle tipping creators. It includes payment initialization, webhook handling, tip status tracking, and automatic creator balance updates.
-
----
-
-## Features
-
-* Initialize tip payments via Chapa checkout.
-* Receive and verify webhook notifications from Chapa.
-* Update tip status (`pending`, `succeeded`, `failed`).
-* Automatically update creator balances after successful payments.
-* Secure HMAC-SHA256 verification for webhook requests.
-* Frontend-friendly endpoints to track tip status.
-
----
-
-## Environment Variables
-
-Add the following to your `.env` file:
+### Environment Variables
 
 ```env
-# Chapa API Keys
 CHAPA_PUBLIC_KEY=CHAPUBK_TEST-xxxx
 CHAPA_SECRET_KEY=CHASECK_TEST-xxxx
-
-# Webhook Secret
 CHAPA_WEBHOOK_SECRET=YourSecretHere
-
-# Webhook and return URLs
 CHAPA_WEBHOOK_URL=https://<your-domain-or-ngrok>/api/chapa/webhook
 CHAPA_RETURN_URL=https://<your-domain-or-ngrok>/payment-result
 ```
 
-**Notes:**
+### Endpoints
 
-* Use **ngrok** URLs for local development.
-* `CHAPA_WEBHOOK_SECRET` must match the secret in your Chapa dashboard.
-* Switch to production API keys in live deployments.
-
----
-
-## API Endpoints
-
-### 1. Create Tip & Initialize Payment
-
-```
-POST /api/creator/{id}/tips
-```
-
-**Request Body:**
-
-```json
-{
-  "amount": 50,
-  "message": "Great content!",
-  "anonymous": false
-}
-```
-
-**Response:**
-
-```json
-{
-  "message": "Checkout initialized",
-  "checkout_url": "https://checkout.chapa.co/checkout/payment/<id>",
-  "tx_ref": "tip_XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
-  "tip_id": 17
-}
-```
-
-* `checkout_url` → redirect user to Chapa for payment.
-* `tx_ref` → track tip status.
+1. `POST /api/creator/{id}/tips` → Initialize tip payment.
+2. `GET /api/tips/{tx_ref}/status` → Check tip status.
+3. `POST /api/chapa/webhook` → Webhook for Chapa notifications.
+4. `GET /payment-result` → Optional confirmation page.
 
 ---
 
-### 2. Check Tip Status
+##  Payouts, Analytics & Role Management
 
-```
-GET /api/tips/{tx_ref}/status
-```
+This module introduces **payout handling for creators**, **analytics insights**, and **role-based access control (RBAC)**.
 
-**Response:**
+### Overview
 
-```json
-{
-  "tx_ref": "tip_XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
-  "status": "pending|succeeded|failed",
-  "amount": "50.00",
-  "message": "Great content!"
-}
-```
+* **Creators** earn money → request payouts.
+* **Admins** approve/reject/mark payouts.
+* **Analytics** gives insights into tips and balance.
 
-* Frontend can poll this endpoint to update UI after payment.
+### Role Management
 
----
+Roles:
 
-### 3. Webhook Endpoint
+* `creator` → request payouts, view analytics.
+* `admin` → manage payouts.
 
-```
-POST /api/chapa/webhook
-```
+### Admin Registration
 
-* Chapa sends POST requests after payments.
-* Server verifies signature using `CHAPA_WEBHOOK_SECRET`.
-* Updates tip status and creator balance upon successful payment.
+Admins register via `/api/register` with an extra `secret` matching `.env ADMIN_SECRET`.
 
-**Important:**
-
-* Only POST requests are allowed; GET requests return `405 Method Not Allowed`.
-* Verify webhook payload contains `tx_ref`.
-* Webhook endpoint should not be called manually by frontend.
-
----
-
-### 4. Payment Result Page
-
-```
-GET /payment-result
-```
-
-**Response:**
-
-```json
-{
-  "message": "Payment completed. Check tip status via /api/tips/{tx_ref}/status."
-}
-```
-
-* Optional confirmation page for users after payment.
-
----
-
-## Workflow
-
-1. User initiates tip → POST `/api/creator/{id}/tips`.
-2. Server returns `checkout_url` → frontend redirects to Chapa.
-3. Payment completes → Chapa sends webhook POST `/api/chapa/webhook`.
-4. Server verifies webhook → updates tip status → updates creator balance.
-5. Frontend polls `/api/tips/{tx_ref}/status` → shows payment result.
-
----
-
-## Notes
-
-* **Sandbox Mode:** Use test keys for development; live keys for production.
-* **Logs:** Check `storage/logs/laravel.log` for webhook and payment info.
-* **Ngrok:** Use ngrok for local webhook testing. Ensure the URL matches `CHAPA_WEBHOOK_URL`.
-* **Error Handling:**
-
-  * `400 Bad Request` → usually missing `tx_ref` in webhook payload.
-  * `405 Method Not Allowed` → GET request sent to webhook endpoint.
-  * Signature mismatch → verify `CHAPA_WEBHOOK_SECRET`.
-
-
----
-
-## Database
-
-* `tips` table stores all tip transactions.
-* `users` table stores creator balances.
-* Tip status updates are transactional to avoid race conditions.
-
-
-
-#  Payouts, Analytics & Role Management
-
-This module introduces **payout handling for creators**, **analytics insights**, and **role-based access control (RBAC)** to separate **admins** from **creators**.
-
-It also defines how **admins register** and explains the APIs available for both frontend and backend integration.
-
----
-
-##  Overview
-
-* **Creators** earn money through tips and can request payouts.
-* **Admins** manage payout approvals, rejections, and payment confirmations.
-* **Analytics** provides creators with insights into their tips and earnings.
-* **Role management** ensures only authorized users can access specific features.
-
----
-
-##  Authentication
-
-* All endpoints require **Bearer Token authentication**.
-* Token is issued upon login and must be sent in the `Authorization` header:
-
-```
-Authorization: Bearer <token>
-```
-
----
-
-##  Role Management
-
-Every user has a `role` field:
-
-* **creator** → Can request payouts, view analytics.
-* **admin** → Can view/manage payouts.
-
-Role enforcement is handled automatically by the backend.
-
----
-
-##  Admin Registration
-
-Perfect 👍 thanks for clarifying!
-
-So in your project, **admins don’t get created manually in the DB** — instead they **self-register with a secret key**. That means the **registration endpoint checks for `ADMIN_SECRET` in `.env`**.
-
-Here’s how it works and how we can document it properly in the README:
-
----
-
-## 👤 Admin Registration
-
-Admins can register **via the normal registration endpoint** (`/api/register`), but with an **extra secret field**.
-
-* If the provided `secret` matches the value of `ADMIN_SECRET` from the `.env` file, the new account will be created with the **`admin` role**.
-* Otherwise, the user is created with either:
-
-  * `tipper` (default), or
-  * `creator` (if specified).
-
-###  Setup
-
-In your `.env` file, define the admin registration secret:
-
-```
-ADMIN_SECRET=super-secret-key
-```
-
-###  Request Example — Register Admin
+Example:
 
 ```json
 POST /api/register
@@ -763,7 +533,7 @@ POST /api/register
 }
 ```
 
-###  Response Example
+Response:
 
 ```json
 {
@@ -778,160 +548,43 @@ POST /api/register
 }
 ```
 
+---
 
-##  API Endpoints
+### Creator Endpoints
 
-###  Creator Endpoints
+* `POST /api/payouts` → Request payout.
+* `GET /api/creator/analytics` → Fetch analytics.
 
-| Method | Endpoint                 | Description                                      |
-| ------ | ------------------------ | ------------------------------------------------ |
-| `POST` | `/api/payouts`           | Request a payout (balance deducted immediately). |
-| `GET`  | `/api/creator/analytics` | Fetch analytics about tips and balance.          |
+### Admin Endpoints
 
-**Example — Request Payout**
-
-Request:
-
-```json
-POST /api/payouts
-{
-  "amount": 50,
-  "note": "Weekly withdrawal"
-}
-```
-
-Response:
-
-```json
-{
-  "message": "Payout requested",
-  "payout": {
-    "id": 1,
-    "amount": "50.00",
-    "status": "pending",
-    "reference": "payout_xxxx",
-    "note": "Weekly withdrawal"
-  }
-}
-```
-
-**Example — Creator Analytics**
-
-```json
-GET /api/creator/analytics
-```
-
-Response:
-
-```json
-{
-  "total_tips": 25,
-  "total_amount": "350.00",
-  "last_tip": "2025-09-05 14:20:00",
-  "top_tipper": "Jane Doe",
-  "balance": "120.00"
-}
-```
+* `GET /api/payouts` → View payouts.
+* `PUT /api/payouts/{id}/approve` → Approve payout.
+* `PUT /api/payouts/{id}/reject` → Reject payout & refund.
+* `PUT /api/payouts/{id}/mark-paid` → Mark payout as paid.
 
 ---
 
-###  Admin Endpoints
+### Data Flow
 
-| Method | Endpoint                      | Description                                   |
-| ------ | ----------------------------- | --------------------------------------------- |
-| `GET`  | `/api/payouts`                | View all payout requests.                     |
-| `PUT`  | `/api/payouts/{id}/approve`   | Approve a payout (moves status → `approved`). |
-| `PUT`  | `/api/payouts/{id}/reject`    | Reject payout & refund creator balance.       |
-| `PUT`  | `/api/payouts/{id}/mark-paid` | Mark an approved payout as paid.              |
-
-**Example — Approve Payout**
-
-```json
-PUT /api/payouts/1/approve
-```
-
-Response:
-
-```json
-{
-  "message": "Payout approved",
-  "payout": {
-    "id": 1,
-    "status": "approved",
-    "processed_at": "2025-09-09 12:44:00"
-  }
-}
-```
-
-**Example — Reject Payout**
-
-```json
-PUT /api/payouts/1/reject
-{
-  "reason": "Invalid bank details"
-}
-```
-
-Response:
-
-```json
-{
-  "message": "Payout rejected + refunded",
-  "payout": {
-    "id": 1,
-    "status": "rejected",
-    "note": "Invalid bank details"
-  }
-}
-```
+1. Creator requests payout → status `pending`.
+2. Admin reviews → approve, reject (refund), or mark as paid.
+3. Creator fetches analytics → tips count, earnings, balance.
 
 ---
 
-##  Data Flow
+### Frontend Integration Guide
 
-1. **Creator workflow**
-
-   * Earns balance through tips.
-   * Requests a payout.
-   * Balance is deducted immediately.
-   * Status starts as `pending`.
-
-2. **Admin workflow**
-
-   * Reviews payout requests.
-   * Can either:
-
-     * Approve (status → `approved`)
-     * Reject (status → `rejected`, funds refunded)
-     * Mark as Paid (status → `paid`, after manual transfer)
-
-3. **Analytics workflow**
-
-   * Creator fetches analytics at `/api/creator/analytics`.
-   * Returns tips count, earnings, last tip date, top supporter, and current balance.
+* Always send `Authorization: Bearer <token>`.
+* Creators → `/api/payouts (POST)` + `/api/creator/analytics`.
+* Admins → `/api/payouts (GET/PUT)`.
+* Use statuses (`pending`, `approved`, `rejected`, `paid`) for UI badges.
 
 ---
 
-##  Frontend Integration Guide
-
-* Always attach `Authorization: Bearer <token>` header.
-* **Creators** only see `/api/creator/analytics` and `/api/payouts (POST)`.
-* **Admins** only see `/api/payouts (GET/PUT)` endpoints.
-* Use returned statuses (`pending`, `approved`, `rejected`, `paid`) to style UI badges.
-* For analytics, frontend can render:
-
-  * Total earned amount → Earnings chart.
-  * Last tip → "Recent activity" card.
-  * Top tipper → Highlight top supporter.
-
----
-
-## note
+##  Note
 
 * **Creators** → Request payouts, view analytics.
 * **Admins** → Manage payouts (approve, reject, mark paid).
-* **RBAC** → Securely restricts access by role.
-* **Admin accounts** are created manually, not via public registration.
-
-
+* **RBAC** → Secure access by role.
+* **Admin accounts** are created with a secret key during registration.
 
