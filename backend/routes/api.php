@@ -79,10 +79,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [ProfileController::class, 'show']);
     Route::put('/user', [ProfileController::class, 'update']);
     
-    Route::post('/tips', [TransactionController::class, 'sendTip']);
+  /*  Route::post('/tips', [TransactionController::class, 'sendTip']);
     Route::get('/transactions', [TransactionController::class, 'index']);
     Route::get('/transactions/{transaction}', [TransactionController::class, 'show']);
     Route::post('/transactions/{transaction}/refund', [TransactionController::class, 'refund']);
     Route::get('/tips/sent', [TransactionController::class, 'sentTips']);
-    Route::get('/tips/received', [TransactionController::class, 'receivedTips']);
+    Route::get('/tips/received', [TransactionController::class, 'receivedTips']); */
 });
+
