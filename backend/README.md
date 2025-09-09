@@ -724,12 +724,60 @@ Role enforcement is handled automatically by the backend.
 
 ##  Admin Registration
 
-Admins are created manually for security.
+Perfect 👍 thanks for clarifying!
 
-* Only backend can create admins directly (via database or console command).
-* Once created, an admin logs in just like a normal user but gains access to **admin APIs**.
+So in your project, **admins don’t get created manually in the DB** — instead they **self-register with a secret key**. That means the **registration endpoint checks for `ADMIN_SECRET` in `.env`**.
+
+Here’s how it works and how we can document it properly in the README:
 
 ---
+
+## 👤 Admin Registration
+
+Admins can register **via the normal registration endpoint** (`/api/register`), but with an **extra secret field**.
+
+* If the provided `secret` matches the value of `ADMIN_SECRET` from the `.env` file, the new account will be created with the **`admin` role**.
+* Otherwise, the user is created with either:
+
+  * `tipper` (default), or
+  * `creator` (if specified).
+
+###  Setup
+
+In your `.env` file, define the admin registration secret:
+
+```
+ADMIN_SECRET=super-secret-key
+```
+
+###  Request Example — Register Admin
+
+```json
+POST /api/register
+{
+  "name": "Alice Admin",
+  "email": "alice@example.com",
+  "password": "password123",
+  "password_confirmation": "password123",
+  "secret": "super-secret-key"
+}
+```
+
+###  Response Example
+
+```json
+{
+  "message": "Registration successful",
+  "user": {
+    "id": 1,
+    "name": "Alice Admin",
+    "email": "alice@example.com",
+    "role": "admin"
+  },
+  "token": "eyJhbGciOiJIUzI1..."
+}
+```
+
 
 ##  API Endpoints
 
