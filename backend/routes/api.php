@@ -22,6 +22,7 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Support\Facades\Mail; 
 
 Route::get('/health', function () {
     try {
@@ -118,3 +119,9 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 });
 
 
+Route::get('/test-mail', function() {
+    Mail::raw('Hello from Render via Ethereal!', function($message) {
+        $message->to('test@example.com')->subject('Test Mail');
+    });
+    return 'Mail sent!';
+});
